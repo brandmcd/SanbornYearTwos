@@ -2,136 +2,97 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DragAndDrop : MonoBehaviour {
+[RequireComponent(typeof(Collider2D))]
+public class DragAndDrop2D : MonoBehaviour
+{
 
+    [Tooltip("Determines if the object can be moved by the player.")]
+    public bool IsMovable = true;
+    [SerializeField] AudioClip _pickupSound;
+    [SerializeField] AudioClip _dropSound;
+    //offset from object to mouse position, determined on pickup
+    private Vector3 _offset = new Vector3();
+    bool _isFollowingMouse = false;
 
-    Vector3 offset = new Vector3(); //offset from piece to mouse pos
-    public bool followMouse = false;
-    int placement = -1; public int opType;
-    bool movable; public GameObject zone;
-    Vector3 worldPos;
     // Use this for initialization
     void Start()
     {
-        //this script is on a instatiated object, it should follow the mouse upon birth.
-        movable = true;
-        this.transform.GetChild(0).transform.position = new Vector3(this.transform.GetChild(0).transform.position.x,
-            this.transform.GetChild(0).transform.position.y, 1);
-        this.transform.position = new Vector3(transform.position.x, transform.position.y, 0.01f);
-        //set offset, follow mouse
-        // offset = transform.position - Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        followMouse = true;
-        Cursor.lockState = CursorLockMode.Confined; //mouse can't go off-screen 
-                                                    //set parent to the WinManager so it can be destroyed
-        this.transform.parent = GameObject.Find("WinManager").transform;
-        // originalPos = transform.position;
+        //set it so that the mouse can't go off-screen
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        // if (!GameManager.lose && !GameManager.win) //no dragging during win/loss
-        // {
-        if(!Input.GetKey(KeyCode.Mouse0) && followMouse)
+        //if mouse is released stop following the mouse
+        if (!Input.GetKey(KeyCode.Mouse0) && _isFollowingMouse)
         {
             OnMouseUp();
         }
-        if (followMouse)
+
+        Vector3 mousePosition = Input.mousePosition;
+
+        if (_isFollowingMouse)
         {
-            Vector3 mousePo = Input.mousePosition;
-            mousePo.z = 1; //Camera.main.nearClipPlane;
-            worldPos = Camera.main.ScreenToWorldPoint(mousePo);
-            transform.position = worldPos;
+            //translate mouse position to world space
+            Vector3 worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
+            worldPosition.z = transform.position.z; //keep this object at the same z value
+            transform.position = worldPosition + _offset;
         }
+
         //if mouse goes off-screen, drop piece and snap to on-screen position
-        Vector3 mousePos = Camera.main.ScreenToViewportPoint(Input.mousePosition);
-        if ((mousePos.x > 1 || mousePos.y > 1) && followMouse)
+        Vector3 mousePositionNormalized = Camera.main.ScreenToViewportPoint(Input.mousePosition);
+        if ((mousePositionNormalized.x > 1 || mousePositionNormalized.y > 1) && _isFollowingMouse)
         {
-            followMouse = false;
-            transform.position = new Vector3(Mathf.Floor(transform.position.x), Mathf.Floor(transform.position.y), -0.5f);
+            //snap to larger value (floor)
+            _isFollowingMouse = false;
+            transform.position = new Vector3(Mathf.Floor(transform.position.x), Mathf.Floor(transform.position.y));
         }
-        if ((mousePos.x < 0 || mousePos.y < 0) && followMouse)
+        if ((mousePositionNormalized.x < 0 || mousePositionNormalized.y < 0) && _isFollowingMouse)
         {
-            followMouse = false;
-            transform.position = new Vector3(Mathf.Ceil(transform.position.x), Mathf.Ceil(transform.position.y), -0.5f);
+            //snap to smaller value (ceil)
+            _isFollowingMouse = false;
+            transform.position = new Vector3(Mathf.Ceil(transform.position.x), Mathf.Ceil(transform.position.y));
         }
-        // }
     }
 
     private void OnMouseDown()
     {
-        if (movable)
+        if (IsMovable)
         {
             //set offset, follow mouse
-            offset = transform.position - Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            followMouse = true;
-
-            //store originalPos as valid starting point
-           // originalPos = transform.position;
+            _offset = transform.position - Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            _offset.z = 0;
+            _isFollowingMouse = true;
+            if (_pickupSound && GetComponent<AudioSource>())
+                GetComponent<AudioSource>().PlayOneShot(_pickupSound);
         }
-        //highlight selected block?
+
+        //add a selected effect here
     }
 
     private void OnMouseUp()
     {
-        //click to nearest valid position, don't follow mouse
-        followMouse = false;
-        //if in one of the operator reciving zones
-        if (placement != -1)
+        //stop following mouse
+        _isFollowingMouse = false;
+        if (_dropSound & GetComponent<AudioSource>())
+            GetComponent<AudioSource>().PlayOneShot(_dropSound);
+
+        //if offject is off-screen, snap to on-screen position
+        Vector3 objecctPositionNormalized = Camera.main.ScreenToViewportPoint(transform.position);
+        if ((objecctPositionNormalized.x > 1 || objecctPositionNormalized.y > 1) && _isFollowingMouse)
         {
-            this.GetComponent<SpriteRenderer>().color = Color.gray; //gray to indicate locked
-            this.transform.position = zone.transform.position;
-            movable = false;
-            WinCondition.setOp(placement, opType);
-            
+            //snap to larger value (floor)
+            _isFollowingMouse = false;
+            transform.position = new Vector3(Mathf.Floor(transform.position.x), Mathf.Floor(transform.position.y));
         }
-            //transform.position = new Vector3(Mathf.Round(transform.position.x), Mathf.Round(transform.position.y), -0.5f);
-            //keep it on screen
-            if (transform.position.x < -7)
-            {
-                transform.position = new Vector3(-7, transform.position.y);
-            }
-            if (transform.position.x > 7)
-            {
-                transform.position = new Vector3(7, transform.position.y);
-            }
-            if (transform.position.y > 4)
-            {
-                transform.position = new Vector3(transform.position.x, 4);
-            }
-            if (transform.position.y < -4.5)
-            {
-                transform.position = new Vector3(transform.position.x, -4.5f);
-            }
+        if ((objecctPositionNormalized.x < 0 || objecctPositionNormalized.y < 0) && _isFollowingMouse)
+        {
+            //snap to smaller value (ceil)
+            _isFollowingMouse = false;
+            transform.position = new Vector3(Mathf.Ceil(transform.position.x), Mathf.Ceil(transform.position.y));
+        }
 
     }
 
-    public void OnTriggerEnter2D(Collider2D col)
-    {
-        print(1);
-        
-        zone = col.gameObject;
-        if(zone.name == "op1")
-        {
-            placement = 1;
-        }
-        else if (zone.name == "op2")
-        {
-            placement = 2;
-        }
-        else if (zone.name == "op3")
-        {
-            placement = 3;
-        }
-    }
-
-    public void OnTriggerExit2D(Collider2D col)
-    {
-        print(2);
-        placement = -1;
-        zone = null;
-    }
-
-    
 }
