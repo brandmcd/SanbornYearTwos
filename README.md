@@ -96,15 +96,15 @@ Methods returning a bool should answer a question. For example, a method that ch
 
 ```csharp
 // EXAMPLE: Methods start with a verb.
-public void SetInitialPosition(float x, float y, float z)
+public void SetToPosition(float x, float y, float z)
 {
     transform.position = new Vector3(x, y, z);
 }
 
 // EXAMPLE: Methods ask a question when they return bool.
-public bool IsNewPosition(Vector3 currentPosition)
+public bool IsGoalPosition(Vector3 goalPosition)
 {
-    return (transform.position == newPosition);
+    return (transform.position == goalPosition);
 }
 ```
 
