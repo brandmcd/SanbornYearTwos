@@ -43,15 +43,17 @@ Variable names should be in **camelCase**. For example, a variable that represen
 Variable names should be **descriptive** and use **nouns**, not verbs. For example, a variable that represents the player's health should be named `playerHealth`, not `health` or `damage`.
 Prefix Boolean variables with a **verb**. For example, a variable that represents whether the player is dead should be named `isDead` instead of `dead`.
 ## Different types of variables
+
+Variables only used in one class should be private, to change these in the editor use the [SerializeField](https://docs.unity3d.com/ScriptReference/SerializeField.html) attribute.
+Variables that can be changed in the editor should have a tooltip to explain what they do, use the [Tooltip](https://docs.unity3d.com/ScriptReference/TooltipAttribute.html) attribute.
+
 Variables should be written in a way that represents their privacy level.
 | Type | Example |
 | ----------- | ----------- |
 | Private Member | Underscore (_) prefix |
 | Public | PascalCase |
 | Local | camelCase |
-| ----------- | ----------- |
-Variables only used in one class should be private, to change these in the editor use the [SerializeField](https://docs.unity3d.com/ScriptReference/SerializeField.html) attribute.
-Variables that can be changed in the editor should have a tooltip to explain what they do, use the [Tooltip](https://docs.unity3d.com/ScriptReference/TooltipAttribute.html) attribute.
+
 ```csharp
 // EXAMPLE: Public and private variables
 
